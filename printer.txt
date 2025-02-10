@@ -1,0 +1,66 @@
+using System;
+using System.IO;
+using Leadtools;
+using Leadtools.Document.Writer;
+using Leadtools.Printer;
+using System.Drawing.Imaging;
+using System.Drawing.Printing;
+
+namespace VirtualPrinterApp
+{
+    class Program
+    {
+        static Printer LeadPrinter;
+        static DocumentWriter DocumentWriter;
+        static PrinterInfo PrinterInfo;
+        static string OutputFile;
+
+        static void SetLicense()
+        {
+            string license = @"C:\LEADTOOLS23\Support\Common\License\LEADTOOLS.LIC";
+            string developerKey = "YOUR_DEVELOPER_KEY";
+            RasterSupport.SetLicense(license, developerKey);
+        }
+
+        static void SetupPrinter()
+        {
+            PrinterInfo = new PrinterInfo();
+            PrinterInfo.Name = "LEADTOOLS Printer";
+            LeadPrinter = new Printer();
+            LeadPrinter.StartPrint += LeadPrinter_StartPrint;
+            LeadPrinter.EndPrint += LeadPrinter_EndPrint;
+            LeadPrinter.PagePrint += LeadPrinter_PagePrint;
+            LeadPrinter.Install(PrinterInfo);
+        }
+
+        private static void LeadPrinter_StartPrint(object sender, PrinterStartPrintEventArgs e)
+        {
+            Console.WriteLine("Start Print Job: " + e.DocumentName);
+            OutputFile = Path.Combine(@"C:\Output", e.DocumentName + ".pdf");
+            DocumentWriter = new DocumentWriter();
+            DocumentWriter.BeginDocument(OutputFile, DocumentFormat.Pdf);
+        }
+
+        private static void LeadPrinter_EndPrint(object sender, EventArgs e)
+        {
+            Console.WriteLine("End Print Job");
+            DocumentWriter.EndDocument();
+            DocumentWriter.Dispose();
+        }
+
+        private static void LeadPrinter_PagePrint(object sender, PrinterPagePrintEventArgs e)
+        {
+            Console.WriteLine("Page Print: " + e.PageNumber);
+            DocumentWriter.WritePage(e.Image, null);
+        }
+
+        static void Main(string[] args)
+        {
+            SetLicense();
+            SetupPrinter();
+            Console.WriteLine("Printer set up and ready to receive jobs. Print to the LEADTOOLS Printer to see it working. Press enter to exit.");
+            Console.ReadLine();
+            Printer.UnInstall(PrinterInfo);
+        }
+    }
+}
